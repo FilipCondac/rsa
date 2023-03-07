@@ -10,11 +10,14 @@
 "use strict";
 // Enable BigInt
 /* global BigInt */
+import * as math from "mathjs";
 
 const randomNumGen = (min, max) => {
   const random = Math.random();
   return Math.floor(random * (max - min + 1)) + min;
 };
+
+const phi = (p, q) => math.lcm(p - 1, q - 1);
 
 // Check if a number is prime
 const isPrime = (num) => {
@@ -101,7 +104,7 @@ export const generateRSAKeys = (min, max) => {
 
 // Encrypt a message using RSA encryption
 export const encryptRSA = (message, publicKey) => {
-  const [e, n] = publicKey;
+  const [e = 0, n = 0] = publicKey;
   let encryptedMessage = "";
 
   // Convert each character in the message to a number, encrypt it, and add it to the encrypted message
@@ -147,7 +150,6 @@ export const decryptRSA = (encryptedMessage, privateKey, n) => {
 
   return decryptedMessage;
 };
-
 const modExp = (base, exponent, modulus) => {
   if (modulus === 1n) return 0n;
   let result = 1n;
@@ -160,16 +162,38 @@ const modExp = (base, exponent, modulus) => {
   return result;
 };
 
-// //Generate RSA keys
-// const keyGen = generateRSAKeys(1, 500);
+export const crackRSA = (n, e) => {
+  const p = findFactor(n);
+  const q = n / p;
+  const phiN = phi(p, q);
 
-// //Encrypt and decrypt a message
-// const encryptedMessage = encryptRSA("Hello World ", keyGen.publicKey);
-// const decryptedMessage = decryptRSA(
-//   encryptedMessage,
-//   keyGen.privateKey,
-//   keyGen.publicKey[1]
-// );
-// console.log(keyGen);
-// console.log(encryptedMessage);
-// console.log(decryptedMessage);
+  let d = 1;
+  while ((e * d) % phiN !== 1) {
+    d++;
+  }
+
+  return d;
+};
+
+const findFactor = (n) => {
+  for (let i = 2; i <= Math.sqrt(n); i++) {
+    if (n % i === 0) {
+      return i;
+    }
+  }
+  return n;
+};
+
+//Generate RSA keys
+const keyGen = generateRSAKeys(1, 10);
+
+//Encrypt and decrypt a message
+const encryptedMessage = encryptRSA("Hello World ", keyGen.publicKey);
+const decryptedMessage = decryptRSA(
+  encryptedMessage,
+  keyGen.privateKey,
+  keyGen.publicKey[1]
+);
+console.log(keyGen);
+console.log(encryptedMessage);
+console.log(decryptedMessage);
