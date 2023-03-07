@@ -1,6 +1,5 @@
-// RSAForm.js
 import React, { useState } from "react";
-import { generateRSAKeys, encryptRSA, decryptRSA } from "./rsa";
+import { generateRSAKeys, encryptRSA, decryptRSA, crackRSA } from "./rsa";
 
 function RSAForm() {
   const [message, setMessage] = useState("");
@@ -8,10 +7,12 @@ function RSAForm() {
   const [privateKey, setPrivateKey] = useState(0);
   const [encryptedMessage, setEncryptedMessage] = useState("");
   const [decryptedMessage, setDecryptedMessage] = useState("");
+  const [crackedPrivateKey, setCrackedPrivateKey] = useState(0);
+  const [charlieDecryptedMessage, setCharlieDecryptedMessage] = useState("");
 
   const handleEncrypt = (event) => {
     event.preventDefault();
-    const keys = generateRSAKeys(100, 1000);
+    const keys = generateRSAKeys(10, 20);
     setPublicKey(keys.publicKey);
     setPrivateKey(keys.privateKey);
     setEncryptedMessage(encryptRSA(message, keys.publicKey));
@@ -20,6 +21,20 @@ function RSAForm() {
   const handleDecrypt = (event) => {
     event.preventDefault();
     setDecryptedMessage(decryptRSA(encryptedMessage, privateKey, publicKey[1]));
+  };
+
+  const handleCrack = async (event) => {
+    event.preventDefault();
+    const [e, n] = publicKey;
+    const privateKey = crackRSA(n, e);
+    setCrackedPrivateKey(privateKey);
+  };
+
+  const handleCharlieDecrypt = (event) => {
+    event.preventDefault();
+    setCharlieDecryptedMessage(
+      decryptRSA(encryptedMessage, crackedPrivateKey, publicKey[1])
+    );
   };
 
   return (
@@ -48,12 +63,35 @@ function RSAForm() {
                 onChange={(e) => setEncryptedMessage(e.target.value)}
               />
             </label>
-            <button type="submit">Decrypt</button>
+            <button type="submit">Decrypt with Bob's Private Key</button>
           </form>
           {decryptedMessage && (
             <div>
-              <p>Only bob knows (Private Key: [{privateKey}])</p>
+              <p>Only Bob knows (Private Key: [{privateKey}])</p>
               <p>Bobs displayed Decrypted message: {decryptedMessage}</p>
+            </div>
+          )}
+          <form onSubmit={handleCrack}>
+            <button type="submit">Brute force Private Key</button>
+          </form>
+          {crackedPrivateKey > 0 && (
+            <div>
+              <p>
+                Charlie sometimes finds the actual key or possibly a key that
+                isn't the actual key but is close enough to decrypt the message
+                or actually decrypts it!
+              </p>
+              <p>Private Key: [{crackedPrivateKey}]</p>
+              <form onSubmit={handleCharlieDecrypt}>
+                <button type="submit">
+                  Decrypt with Charlie's Private Key
+                </button>
+              </form>
+              {charlieDecryptedMessage && (
+                <div>
+                  <p>Charlie's decrypted message: {charlieDecryptedMessage}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
